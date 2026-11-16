@@ -36,3 +36,17 @@ Append as you go, one entry per decision. If blocked, make a reasonable assumpti
 - **Why:** an exact NSN means "you make this part". Being an approved source means you can win it outright. An FSC is the product family. A keyword is the weakest signal.
 - **Keyword rules:** whole words only ("CAP" never matches "CAPACITOR"), plus simple plurals. The last word is prefix-matched only when DIBBS's 20-character field is full, i.e. the word was cut off.
 - **Review fix (orchestrator):** the builder detected truncation by `len == 20`. The raw field is space-padded to 20, so every row would have counted as truncated ("PINION" would match "SPRING,PIN"). Changed it to `len(rstrip) >= 20` and added a test. The "hidden by qty" count now covers matched rows only, otherwise it counts thousands of irrelevant rows.
+
+### D5. The integrity check compares against DIBBS's own HTML listing, field by field
+- **Decision:** `python -m app.verify` fetches page 1 of the live issue-date listing (50 rows) and compares sol, NSN, qty, PR, return-by date and the PDF link with the stored rows. It exits 1 on any mismatch.
+- **Result (live, 12:57):** 50 checked, 50 found, 0 missing, 0 mismatches on every field.
+- **Review note:** one solicitation and NSN can appear on several lines (different PRs), so a live row is compared with each stored line for that key. It counts as clean only if one of them is identical in every field, so this cannot hide a wrong identifier.
+- **Tradeoff:** it checks a 50-row sample from page 1, not all 2,584. Paging the rest needs ASP.NET postbacks; that's the next step.
+
+### D6. Approved-source names only on demand
+- **Decision:** CAGE and P/N for every row come from the bulk `as` file (1,803 NSNs). Company names come from the solicitation PDF only when the user asks, and are cached per solicitation.
+- **Why:** 2,458 PDFs at roughly 400 KB each would be about 1 GB a day and thousands of requests to a government site.
+- **Live check:** SPE4A727T4218 gave 9 named sources, the same as the hand count from the fixture.
+
+| S2 thin path | 0:04 | 57/57 | n/a | 21/21 | live ingest 2,584 rows, 2,458 sols, 8 flagged, 1,803 approved NSNs |
+| S3 checks | 0:05 | 59/59 | 0 / 50 | 21/21 | evaluator labelled blind; verifier 0 mismatches |
