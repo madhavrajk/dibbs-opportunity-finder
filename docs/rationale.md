@@ -30,3 +30,9 @@ Append as you go, one entry per decision. If blocked, make a reasonable assumpti
 ### D3. Subagents on cheaper models; evaluator isolation by instruction
 - **Decision:** Opus orchestrates, Sonnet builds and evaluates, Haiku verifies and summarises.
 - **Note:** this session's Agent tool runs general-purpose agents with a model override. The `.claude/agents` hook that blocks the evaluator from `app/` only applies when the evaluator runs as a project agent, so here the isolation is an instruction, not enforced.
+
+### D4. Match scoring: NSN 100, approved-source CAGE 80, FSC 40, keyword 30 each
+- **Decision:** additive scores, each with a human-readable reason; sorted by score, then the soonest return-by date.
+- **Why:** an exact NSN means "you make this part". Being an approved source means you can win it outright. An FSC is the product family. A keyword is the weakest signal.
+- **Keyword rules:** whole words only ("CAP" never matches "CAPACITOR"), plus simple plurals. The last word is prefix-matched only when DIBBS's 20-character field is full, i.e. the word was cut off.
+- **Review fix (orchestrator):** the builder detected truncation by `len == 20`. The raw field is space-padded to 20, so every row would have counted as truncated ("PINION" would match "SPRING,PIN"). Changed it to `len(rstrip) >= 20` and added a test. The "hidden by qty" count now covers matched rows only, otherwise it counts thousands of irrelevant rows.

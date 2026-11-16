@@ -1,0 +1,173 @@
+{
+ "profile": {
+  "company": "Test Vendor",
+  "keywords": [
+   "cap",
+   "glove",
+   "tablets",
+   "nasopharyngeal",
+   "air"
+  ],
+  "nsns": [
+   "6515007637366",
+   "5365LN0021113",
+   "6505008901840"
+  ],
+  "fscs": [
+   "6520",
+   "5310"
+  ],
+  "cage": "0PMN3",
+  "qty_min": 2,
+  "qty_max": null
+ },
+ "cases": [
+  {
+   "line": 8,
+   "sol": "SPE2DH27T0591",
+   "nsn": "6532009268920",
+   "label": "relevant",
+   "reason": "GLOVES plural of keyword glove, qty 4"
+  },
+  {
+   "line": 225,
+   "sol": "SPE2DS27T2012",
+   "nsn": "6515015150197",
+   "label": "relevant",
+   "reason": "GLOVE keyword, qty 10"
+  },
+  {
+   "line": 4,
+   "sol": "SPE1C127T0123",
+   "nsn": "8415017292298",
+   "label": "hidden_by_qty",
+   "reason": "GLOVE keyword matches but qty 1 < qty_min 2"
+  },
+  {
+   "line": 96,
+   "sol": "SPE2DS27T1919",
+   "nsn": "6515011502102",
+   "label": "relevant",
+   "reason": "CAP is a whole-word keyword, qty 3"
+  },
+  {
+   "line": 260,
+   "sol": "SPE2DS27T2041",
+   "nsn": "6532000048055",
+   "label": "relevant",
+   "reason": "CAP whole word, qty 2 meets minimum"
+  },
+  {
+   "line": 15,
+   "sol": "SPE2DH27T0598",
+   "nsn": "6640015872955",
+   "label": "not_relevant",
+   "reason": "CAP only inside CAPILLARY; no other criterion"
+  },
+  {
+   "line": 113,
+   "sol": "SPE2DS27T1936",
+   "nsn": "6515015204367",
+   "label": "not_relevant",
+   "reason": "air only inside AIRWAY; not a whole word"
+  },
+  {
+   "line": 123,
+   "sol": "SPE2DS27T1945",
+   "nsn": "6515011295436",
+   "label": "relevant",
+   "reason": "NASOPHARYNGEA is the 20-char truncation of keyword nasopharyngeal, qty 36"
+  },
+  {
+   "line": 122,
+   "sol": "SPE2DS27T1945",
+   "nsn": "6515011295436",
+   "label": "hidden_by_qty",
+   "reason": "same solicitation and NSN as the previous case, qty 1 < 2, keyword matches"
+  },
+  {
+   "line": 217,
+   "sol": "SPE2DS27T2004",
+   "nsn": "6515015188597",
+   "label": "relevant",
+   "reason": "NASOPHARY truncated last token prefix of nasopharyngeal, qty 2"
+  },
+  {
+   "line": 72,
+   "sol": "SPE2DP27T0377",
+   "nsn": "6505008901840",
+   "label": "relevant",
+   "reason": "profile NSN 6505008901840 exact, TABLET truncated, qty 14"
+  },
+  {
+   "line": 86,
+   "sol": "SPE2DS27T1908",
+   "nsn": "6515007637366",
+   "label": "relevant",
+   "reason": "profile NSN 6515007637366 exact, qty 2"
+  },
+  {
+   "line": 252,
+   "sol": "SPE2DS27T2034",
+   "nsn": "6515007637367",
+   "label": "not_relevant",
+   "reason": "NSN differs from profile NSN in last digit (\u2026367 vs \u2026366); FSC 6515 not on profile"
+  },
+  {
+   "line": 301,
+   "sol": "SPEFA127T0024",
+   "nsn": "5365LN0021113",
+   "label": "relevant",
+   "reason": "non-standard NSN 5365LN0021113 exact on profile, qty 2"
+  },
+  {
+   "line": 305,
+   "sol": "SPEFA327T0050",
+   "nsn": "4710LN0035834",
+   "label": "not_relevant",
+   "reason": "4710LN0035834 is not on profile; no keyword/FSC hit, qty 3"
+  },
+  {
+   "line": 92,
+   "sol": "SPE2DS27T1914",
+   "nsn": "6510013652077",
+   "label": "not_relevant",
+   "reason": "FSC 6520 appears inside NIIN of 6510013652077 but FSC is 6510; no hit"
+  },
+  {
+   "line": 30,
+   "sol": "SPE2DH27T0613",
+   "nsn": "6520016772830",
+   "label": "relevant",
+   "reason": "FSC 6520 dental group, qty 24"
+  },
+  {
+   "line": 55,
+   "sol": "SPE2DP27T0363",
+   "nsn": "6505016265774",
+   "label": "relevant",
+   "reason": "vendor CAGE 0PMN3 is approved source for NSN, qty 2"
+  },
+  {
+   "line": 308,
+   "sol": "SPE4A627T065C",
+   "nsn": "5320012676374",
+   "label": "not_relevant",
+   "reason": "PIN-RIVET FSC 5320, no criteria hit, qty 379"
+  },
+  {
+   "line": 281,
+   "sol": "SPE4A027T0616",
+   "nsn": "5310015432453",
+   "label": "relevant",
+   "reason": "FSC 5310 and qty 8"
+  },
+  {
+   "line": 312,
+   "sol": "SPE4A627T065G",
+   "nsn": "5310016574252",
+   "label": "hidden_by_qty",
+   "reason": "FSC 5310 hit but qty 1 < 2"
+  }
+ ]
+}
