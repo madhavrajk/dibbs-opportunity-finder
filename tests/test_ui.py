@@ -71,7 +71,9 @@ def test_with_snapshot(app):
     at = AppTest.from_file(UI, default_timeout=30).run()
     assert not at.exception
     assert [m.value for m in at.metric] == ["3", "1", "1", "2"]
-    assert len(at.tabs) == 2 and len(at.dataframe) >= 2
+    labels = [t.label for t in at.tabs]
+    assert len(labels) == 3 and len(at.dataframe) >= 2
+    assert [l.split(" (")[0] for l in labels] == ["For you", "All RFQs", "Shortlist"]
     assert any("posted 2026-11-16" in m.value for m in at.markdown)
     at.toggle[0].set_value(True).run()
     assert not at.exception

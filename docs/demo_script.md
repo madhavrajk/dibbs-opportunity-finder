@@ -1,66 +1,115 @@
-# Demo script for the interviewer (about 6 minutes, then questions)
+# Demo script for the interviewer (about 5 minutes)
 
-## Set up before the call (off screen)
+## The whole story in one breath
+> "Every day DIBBS posts thousands of RFQs. I built a tool that pulls today's list, ranks it for one vendor, explains
+> why each one matched, and links straight back to DIBBS. And I check every row against DIBBS so no part number is ever wrong."
+
+---
+
+## Before the call (off screen)
 ```bash
 cd ~/Downloads/SalesPatriot/dibbs-finder && source .venv/bin/activate
-python scripts/gate.py                     # should end in VERDICT: PASS
-streamlit run app/ui.py                    # http://localhost:8501, demo profile already saved
+python scripts/gate.py        # must say VERDICT: PASS
+streamlit run app/ui.py       # opens the app in the browser
 ```
-Open these tabs: the app, `docs/questions.md`, `docs/rationale.md`, `docs/approach_map.md`, and a terminal in the project.
-Do one silent run-through first.
+Have open: the app, `docs/questions.md`, and a terminal. Practise once.
+
+**Tip:** if you click Refresh on the day, DIBBS gives a new batch and the numbers change. Read them off the screen instead of saying the ones below.
 
 ---
 
-## 0. Open (15 s)
-**Say:** "You asked how a vendor finds the RFQs worth quoting. I'll show the process first, then the product, then
-how I know it's right."
+## Part 1: How I worked (1 minute)
 
-## 1. The process (60 s)
-| Do | Say |
-|---|---|
-| Show `docs/questions.md` | "Before building I asked you these. Three answers shaped everything: vendors think in keywords, NSNs or FSCs; overmapping beats missing one; and one wrong digit in an NSN or solicitation number is unacceptable." |
-| Show `CLAUDE.md`, the priorities and the stage table | "Priorities in order: never a wrong identifier, never miss an RFQ, then save time. Stages with gates and a commit per gate." |
-| Terminal: `git log --oneline` | "One commit per gate: contracts, thin path, checks, sources, UX, and the full verification." |
-| Point at the model table in `CLAUDE.md` | "Opus designed and reviewed. Sonnet agents built the modules in parallel against shared contracts. Haiku ran the mechanical checks. The product itself uses no LLM." |
+**Show `docs/questions.md`.**
+> "Before writing any code, I asked you questions. Three answers shaped the whole design:
+> 1. Vendors search by **keywords**, **part numbers (NSNs)** or **product groups (FSCs)**.
+> 2. It's better to **show too many than miss one**.
+> 3. A part number or solicitation number must **never be wrong**, not even one digit."
 
-## 2. The product (2 min)
-| Do | Say |
-|---|---|
-| Point at the header and the freshness line, then open **How this batch was fetched** | "This is today's batch. Every refresh leaves a plain-English trace with timing per stage: the consent banner, which file, how many rows, how many flagged." |
-| Point at the KPI row: **RFQs in batch 2,725 · Matches for you 352 · Hidden by your qty filter 27** | "For a fastener supplier: 2,725 RFQ lines today, 352 worth a look. 27 are hidden only because the vendor said 'no qty 1', and they're one toggle away." |
-| Sidebar: **What you sell** (keywords, NSNs, FSCs, CAGE) and **Quantity filter** | "The three ways you told me vendors think, plus their CAGE code: if they're an approved source, that row jumps up." |
-| **For you** tab: point at **Why it matched** on the top row (`FSC 5310 · keyword: nut · keyword: washer`) | "It ranks rather than filters, and every row says why. A bid manager can trust or dismiss a match in a second." |
-| Point at a keyword-only row such as "INSERT,SCREW THREAD" | "26 matches came from keywords outside the vendor's FSCs. A pure FSC filter would have missed them." |
-| Point at "CYLINDER, FLATWARE WASH" if it's on screen | "And here's the cost of overmapping: DIBBS cuts descriptions at 20 characters, so 'WASH' could be 'WASHER'. I'd rather show it than miss it, and that was your call." |
-| Click a row's **Solicitation** link | "Every row opens its own page on DIBBS. The link is built only from the raw solicitation number." |
-| **Row detail:** pick `SPE4A6-27-T-073M` → **Load company names from the solicitation PDF** | "Approved sources: CAGE and part number for every NSN come from DIBBS's bulk file. Company names are only in the PDF, so I fetch them on demand and cache them." |
-| Click **Shortlist to quote**, then open the **Shortlist** tab | "The vendor's decisions are recorded. When they disagree with the ranking, a script turns that into a candidate test case. A person promotes it. That's how it improves." |
-
-## 3. How I know it's right (90 s): the strongest part
-| Do | Say |
-|---|---|
-| Terminal: `python -m evals.report` | "21 labelled cases, written by an agent that never saw the code: near misses like CAP versus CAPACITOR, a truncated word, an NSN one digit off, an FSC buried in the NIIN. Precision 1.0, recall 1.0, and every identifier byte-identical to the source." |
-| Terminal: `python -m app.verify` (cached, about 30 s) | "Zero tolerance means checking every row. This pages through all 55 pages of DIBBS's own listing and compares 2,725 rows field by field." |
-| Show the result: **0 field mismatches, 0 missing either way** | |
-| Show `docs/rationale.md` D8 | "Earlier the 50-row sample said zero mismatches. The full check found two real problems. A 14-character NSN was being cut to 13, so we displayed a wrong identifier, and the test had encoded the same mistake. And 141 RFQ lines are on DIBBS but not in the daily file. Two of those were matches for this vendor. Both are fixed: the full NSN is read, and the missing lines are merged in and flagged. All 2,584 file rows now match DIBBS exactly." |
-
-## 4. Close (30 s)
-**Say:** "So: today's RFQs, ranked for one vendor with reasons, links back to DIBBS, approved sources, a feedback loop,
-and an integrity check on every row. Next I'd add an LLM only where it helps, at profile setup: 'describe what you
-make' becomes suggested FSCs and keywords. Then a morning email of new matches and award history per NSN."
+**Then say:**
+> "I used AI agents like a small team. A strong model planned and reviewed the work. Cheaper models wrote the code
+> in parallel, and the cheapest model ran the checks. I saved my work after every step, so there's a clear history."
 
 ---
+
+## Part 2: The app (2 minutes)
+
+**1. Point at the four numbers at the top.**
+> "Today DIBBS has **2,725** RFQs. For this fastener supplier, **352** are worth a look. **27** are hidden only because
+> the vendor said 'no orders of 1', and they can show them with one click."
+
+**2. Point at the left sidebar.**
+> "This is the vendor's profile: the words they sell, their part numbers, their product groups, and their company code.
+> If they're an approved supplier for a part, that RFQ moves to the top."
+
+**3. Point at the "Why it matched" column.**
+> "Every row says why it's there, for example 'FSC 5310, keyword: nut'. The bid manager can decide in a second."
+
+**4. Click a solicitation number.**
+> "One click opens the real page on DIBBS."
+
+**5. Pick a row in "Row detail" and click "Load company names from the solicitation PDF".**
+> "This shows which companies are approved to supply this part. The names are only in the PDF, so I read it when you ask."
+
+**6. Click "Shortlist to quote", then open the Shortlist tab.**
+> "The vendor marks what they'll quote. If they disagree with my ranking, that turns into a new test case, so the
+> tool gets better over time."
+
+---
+
+## Part 3: How I know it's right (1.5 minutes): the strongest part
+
+**1. In the terminal run `python -m evals.report`.**
+> "I had a separate AI agent write 21 test cases **without seeing my code**, including tricky ones like 'CAP' versus
+> 'CAPACITOR'. All 21 pass."
+
+**2. Run `python -m app.verify` (about 30 seconds).**
+> "This compares **every one of the 2,725 rows** in my app with DIBBS's own website, one by one. Result: **zero differences.**"
+
+**3. Tell the story of what it caught.**
+> "The first time I ran the full check, it caught two real problems that a small sample had missed:
+> - One part number was being cut short by one character. Fixed.
+> - 141 RFQs were on the website but missing from DIBBS's download file. Two of them were good matches for this vendor. Now I add them in.
+>
+> That's why I check everything against a second source."
+
+---
+
+## Part 4: Close (30 seconds)
+> "So it pulls today's RFQs, ranks them for the vendor with reasons, links back to DIBBS, shows approved suppliers,
+> learns from the vendor's choices, and checks every row. Next I'd add AI to help vendors set up their profile:
+> they describe what they make, and it suggests keywords and product groups. Then a morning email with new matches."
+
+---
+
+## Numbers to remember
+| What | Number |
+|---|---|
+| RFQs today | 2,725 |
+| Matches for the demo vendor | 352 |
+| Hidden by the quantity filter | 27 |
+| Test cases passing | 21 of 21 |
+| Rows checked against DIBBS | 2,725, zero differences |
+| Real problems the full check caught | 2 (a cut-off part number, 141 missing RFQs) |
+
+## Words you might need
+| Word | Plain meaning |
+|---|---|
+| RFQ / solicitation | A request from the government for a price on a part |
+| NSN | The part's 13-digit stock number, e.g. 5305-01-234-5678 |
+| FSC | The first 4 digits of the NSN: the product group (5305 = screws) |
+| CAGE code | A company's ID code |
+| Approved source | A company the government already accepts for that part |
 
 ## If he asks
-| Question | Answer |
+| Question | Simple answer |
 |---|---|
-| Why not scrape the pages directly? | "The daily file is one request with identifiers in fixed columns. The pages are about 55 ASP.NET postbacks. I use the pages as the independent check, and to fill the 141 lines the file misses." |
-| Why no LLM? | "NSNs, FSCs and CAGEs are exact strings, so code is exact and free. An LLM is useful for vague input ('we machine stainless fittings') at profile setup, and it never touches identifiers." |
-| How does it scale to many vendors? | "Ingest once per day for everyone; matching is pure and runs in milliseconds per vendor. Then saved profiles per tenant, a morning digest, and PDF parsing on a queue for matched rows only." |
-| What would you not trust yet? | "The meaning of the trailing code column (probably set-aside or AMSC) isn't decoded. Keyword matching is lexical. And verify compares against the listing that also fills the gaps, so for those 141 rows it's by construction; the 2,584 file rows are the independent proof." |
-| How long did it take? | "The functional build was about 10 minutes of agent time after the questions. Then I extended the check to every row, which found the two real issues above." |
-| What did you get wrong? | "My recon slice for the NSN. The checks caught it, which is why I check everything against a second source." |
+| Why not just scrape the website? | "DIBBS posts a daily file. One download beats clicking 55 pages. I still use the website, to double-check the file and to fill in what the file misses." |
+| Why no AI in the app itself? | "Part numbers are exact, so plain code matches them perfectly and for free. AI is useful later, for helping vendors describe what they make." |
+| Will it work for many vendors? | "Yes. Download once a day for everyone, then each vendor's ranking takes milliseconds." |
+| What isn't finished? | "Some DIBBS codes (like set-asides) aren't decoded yet, and keyword matching is exact words, so 'fastener' won't find 'screw' yet." |
+| What did you get wrong? | "One part number was cut short in my early notes. The full check caught it. That's why I check every row." |
 
-## Do not
-- Run `python -m app.verify --no-cache` live on the call: it takes about 3 minutes cold.
-- Present the 141 merged rows as independently verified.
+## Don't
+- Don't run the check with `--no-cache` on the call; it takes about 3 minutes.
+- Don't say the 141 added RFQs were "independently verified". They came from the website itself. The independent proof is that the other 2,584 rows match the website exactly.
