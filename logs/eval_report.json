@@ -1,0 +1,28 @@
+{
+  "source_file": "in_sample.txt",
+  "cases_total": 21,
+  "confusion": {
+    "relevant": {
+      "relevant": 12,
+      "not_relevant": 0,
+      "hidden_by_qty": 0
+    },
+    "not_relevant": {
+      "relevant": 0,
+      "not_relevant": 6,
+      "hidden_by_qty": 0
+    },
+    "hidden_by_qty": {
+      "relevant": 0,
+      "not_relevant": 0,
+      "hidden_by_qty": 3
+    }
+  },
+  "relevant_precision": 1.0,
+  "relevant_recall": 1.0,
+  "hidden_by_qty_accuracy": 1.0,
+  "overall_accuracy": 1.0,
+  "wrong_cases": [],
+  "errors": [],
+  "identifier_byte_equality": "313/313"
+}

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import re
 import sys
 from collections import Counter
@@ -19,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import pandas as pd
 import streamlit as st
 
-from app import contracts
+from app import contracts, feedback
 from app.contracts import (ApprovedSource, Match, Profile, Snapshot, Solicitation, fmt_nsn, fmt_sol, nsn_url,
                            pdf_url, record_url)
 
@@ -277,7 +278,64 @@ def show_pdf_names(s: Solicitation, src: list[ApprovedSource], key: str) -> list
     return got
 
 
-def show_detail(matches: list[Match], snapshot: Snapshot, key: str, clicked: int | None = None) -> None:
+DECISION_TEXT = {"quote": "Shortlisted to quote", "not_for_us": "Marked not for us"}
+
+
+def decision_key(s: Solicitation) -> tuple[str, str, str]:
+    return (s.sol, s.nsn, s.pr)
+
+
+def shortlist(matches: list[Match], decisions: dict) -> list[Match]:
+    return [m for m in matches if decisions.get(decision_key(m.sol), {}).get("decision") == "quote"]
+
+
+def trace_lines(path=None) -> dict | None:
+    """Latest refresh trace (read-only), or None when no refresh has been recorded."""
+    p = Path(path) if path else Path(contracts.DATA_DIR) / "refresh_log.jsonl"
+    try:
+        lines = [ln for ln in p.read_text(encoding="utf-8").splitlines() if ln.strip()]
+        return json.loads(lines[-1]) if lines else None
+    except (OSError, ValueError):
+        return None
+
+
+def show_trace() -> None:
+    with st.expander("How this batch was fetched"):
+        tr = trace_lines()
+        if not tr:
+            st.caption("Run Refresh to record a trace.")
+            return
+        st.caption(f"Last refresh {tr.get('ts', '')} · outcome: {tr.get('outcome', '?')}")
+        for ln in tr.get("story", []):
+            st.markdown(f"- {ln}")
+        st.dataframe(pd.DataFrame([{"Stage": x["name"], "Seconds": x["seconds"], "Note": x["note"]}
+                                   for x in tr.get("stages", [])]), hide_index=True, width="stretch")
+
+
+def show_decision(m: Match, key: str, profile: Profile | None) -> None:
+    """Approve / reject in one place. Every click is appended to data/feedback.jsonl; the latest decision wins."""
+    s = m.sol
+    cur = feedback.latest().get(decision_key(s))
+    note = st.text_input("Note (optional)", key=f"{key}_note", max_chars=140, placeholder="why? e.g. we do not stock this")
+    d1, d2, d3 = st.columns([1, 1, 3], vertical_alignment="center")
+    pick = None
+    if d1.button("Shortlist to quote", key=f"{key}_quote", type="primary", width="stretch"):
+        pick = "quote"
+    if d2.button("Not for us", key=f"{key}_nfu", width="stretch"):
+        pick = "not_for_us"
+    if pick:
+        feedback.record(s.sol, s.nsn, s.pr, pick, note, profile.model_dump() if profile else {}, m.score,
+                        m.reasons)
+        st.rerun()
+    if cur:
+        d3.caption(f"{DECISION_TEXT[cur['decision']]} on {cur['ts'][:16].replace('T', ' ')} UTC"
+                   + (f": {cur['note']}" if cur.get("note") else ""))
+    else:
+        d3.caption("No decision yet. Your choices are recorded and help tune the ranking.")
+
+
+def show_detail(matches: list[Match], snapshot: Snapshot, key: str, clicked: int | None = None,
+                profile: Profile | None = None) -> None:
     if not matches:
         return
     lines = line_numbers(snapshot)
@@ -326,6 +384,7 @@ def show_detail(matches: list[Match], snapshot: Snapshot, key: str, clicked: int
             st.dataframe(table, hide_index=True, width="stretch")
         else:
             st.caption("No approved sources on file for this NSN.")
+        show_decision(m, key, profile)
         b1, b2, b3, _ = st.columns([1, 1, 1, 2])
         b1.link_button("DIBBS record", record_url(s.sol), width="stretch")
         b2.link_button("Solicitation PDF", pdf_url(s.sol), width="stretch")
@@ -392,6 +451,7 @@ def header(snapshot: Snapshot | None, profile: Profile) -> None:
         st.markdown(f"Latest DIBBS batch: **posted {snapshot.posted:%Y-%m-%d}** · "
                     f"fetched {snapshot.fetched_at:%Y-%m-%d %H:%M} ({age_text(snapshot.fetched_at)}) · "
                     f"source `{snapshot.source_file}` (DIBBS daily file)")
+    show_trace()
     if clicked:
         from app import ingest
         try:
@@ -438,7 +498,10 @@ def main() -> None:
     if notes:
         st.caption(" ".join(notes))
 
-    tab1, tab2 = st.tabs([f"For you ({s['matched']})", f"All RFQs ({s['total']})"])
+    decisions = feedback.latest()
+    short = shortlist(matches, decisions)
+    tab1, tab2, tab3 = st.tabs([f"For you ({s['matched']})", f"All RFQs ({s['total']})",
+                                f"Shortlist ({len(short)})"])
     with tab1:
         if profile_is_empty(profile):
             st.info("Tell us what you sell and we will rank today's RFQs. Three ways to match, set in the sidebar: "
@@ -453,7 +516,7 @@ def main() -> None:
             st.info("Nothing in today's batch matches your profile. Try broader keywords or more FSCs, "
                     "or browse All RFQs.")
         clicked = show_table(view, snapshot, "you")
-        show_detail(view, snapshot, "detail_you", clicked)
+        show_detail(view, snapshot, "detail_you", clicked, profile)
     with tab2:
         f1, f2, f3 = st.columns([2, 2, 2])
         q = f1.text_input("Search (solicitation, NSN, description)", placeholder="e.g. SPE4A0-27-T-0616 or washer")
@@ -462,7 +525,14 @@ def main() -> None:
         view = filter_all(matches, q, fscs, None if within >= 60 else within)
         st.caption(f"{len(view)} of {len(matches)} RFQs")
         clicked = show_table(view, snapshot, "all")
-        show_detail(view, snapshot, "detail_all", clicked)
+        show_detail(view, snapshot, "detail_all", clicked, profile)
+    with tab3:
+        if short:
+            st.caption(f"{len(short)} lines you marked to quote. Newest decision wins; change one from its detail.")
+            clicked = show_table(short, snapshot, "short")
+            show_detail(short, snapshot, "detail_short", clicked, profile)
+        else:
+            st.info("Nothing shortlisted yet. Open a row and click Shortlist to quote.")
 
 
 if __name__ == "__main__":

@@ -37,7 +37,7 @@ non-standard NSNs and 5 solicitation numbers ending in a letter. 72 of them repe
 | Slice | Field | Example |
 |---|---|---|
 | `[0:13]` | Solicitation number | `SPE1C127T0119` |
-| `[13:26]` | NSN (13) | `8465012768198` |
+| `[13:26]` | NSN (13) — **WRONG for long NSNs: see correction below** | `8465012768198` |
 | `[26:62]` | Blank in the sample (maybe part number when there is no NSN) | |
 | `[62:72]` | Purchase request number | `7019120187` |
 | `[72:80]` | Return-by date `MM/DD/YY` | `11/27/26` |
@@ -71,3 +71,9 @@ non-standard NSNs and 5 solicitation numbers ending in a letter. 72 of them repe
   Plan: CAGE and part number for every row from the `as` file; company names from the PDF **for the top matches or on row
   expand**, cached by solicitation. Don't fetch 2,500 PDFs.
 - When a name from the PDF and a CAGE from the `as` file disagree, show both and flag it. The `as` file wins for the CAGE.
+
+## Correction (found by the full live check, 13:10)
+The NSN field is **not always 13 characters**. `SPE7M027T1283` has the 14-character NSN `N4215863170925`; the `[13:26]` slice
+cut it to `N421586317092`. The recon checked that every NSN was 13 digits or flagged, but never that the flagged ones were
+complete. Correct rule: the identifier is the whitespace-free token starting at index 13 within `[13:62]`. The 50-row
+sample check could not catch this; the all-rows check against the HTML listing did.

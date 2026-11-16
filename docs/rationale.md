@@ -59,3 +59,13 @@ Append as you go, one entry per decision. If blocked, make a reasonable assumpti
 
 | S5 UX | 0:09 | 60/60 | 0 / 50 | 21/21 | 23/23 functions kept |
 | S6 write-up | 0:10 | 60/60 | 0 / 50 | 21/21 | README final |
+
+### D8. The live check covers every row, and it found a wrong identifier and 141 missed lines
+- **Decision:** `python -m app.verify` now pages through the whole issue-date listing (55 ASP.NET postback pages, 2,725 rows; about 165 s cold, 26 s cached) and compares in both directions, keyed by (sol, NSN, PR).
+- **Found 1: a wrong identifier shown to users.** The 14-character NSN `N4215863170925` was stored as `N421586317092`. The source was my recon slice `[13:26]`, and the evaluator's byte-equality test inherited it, so the tests encoded the bug. It was flagged "non-standard" but still displayed wrong. Fix: read the full token from `[13:62]`.
+- **Found 2: 141 RFQ lines on DIBBS but not in the daily file** (113 extra lines on known solicitations, 28 unknown solicitations; mostly return-by 11-23 and 11-27). That breaks priority 2, "never miss". Fix: merge listing-only rows, copied byte for byte and flagged "from DIBBS listing (not in daily file)".
+- **Found 3 (in the checker itself):** a "Mil-Spec" tag under the NSN on the listing gave 157 false mismatches; the parser was fixed.
+- **Lesson:** a 50-row sample said 0 mismatches. Only checking every row against an independent source found the defect. This is the RFI-retro lesson again: green checks only mean no known failure came back.
+- **Re-verified by the orchestrator (13:14):** 55 pages, 2,725/2,725 rows, 0 field mismatches, 0 missing either way; `SPE7M027T1283` now stores `N4215863170925` (flagged as longer than 13). Caveat: the 141 merged rows came from the listing, so they match it by construction. The independent result is that all 2,584 daily-file rows are identical to DIBBS's own listing.
+
+| Full verify | 0:22 | 71/72 (1 known UI tab-count test) | 0 / 2,725 | 21/21 | NSN fix + 141 merged lines |

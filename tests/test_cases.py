@@ -51,7 +51,7 @@ def test_identifiers_are_fixture_bytes(sols):
     assert len(sols) == len(LINES)
     for s, line in zip(sols, LINES):
         assert s.sol == line[0:13]
-        assert s.nsn == line[13:26]
+        assert s.nsn == line[13:62].split()[0]
 
 
 def test_links(sols):
