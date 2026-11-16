@@ -89,3 +89,50 @@ def test_pure_helpers():
     df = ui.build_rows(ms, SNAP, date(2026, 11, 16))
     assert df.loc[0, "Approved sources"] == 1 and df.loc[0, "NSN"] == "5305-01-276-8198"
     assert df.loc[2, "NSN"] == "123"
+
+
+def test_multi_line_solicitation_rows_distinct():
+    from app import ui
+    a = sol("SPE4A027T0616", "5310000000001")
+    b = a.model_copy(update={"pr": "PR2", "nsn": "5310000000002"})
+    c = a.model_copy(update={"pr": "PR3", "nsn": "5310000000003"})
+    snap = SNAP.model_copy(update={"solicitations": [a, b, c]})
+    ms = [Match(sol=x, score=1, reasons=["FSC 5310"]) for x in (a, b, c)]
+    df = ui.build_rows(ms, snap, date(2026, 11, 16))
+    assert len(df) == 3                                   # no line dropped or merged
+    assert list(df["Line"]) == ["1 of 3", "2 of 3", "3 of 3"]
+    assert list(df["PR"]) == ["PR1", "PR2", "PR3"]
+    labels = {ui.row_label(m, ui.line_numbers(snap)) for m in ms}
+    assert len(labels) == 3 and all(l.startswith("SPE4A0-27-T-0616") for l in labels)
+    single = ui.build_rows(fake_rank(None, SNAP), SNAP, date(2026, 11, 16))
+    assert single.loc[0, "Line"] == "" and single.loc[0, "Status"] == "Due soon"
+    assert single.loc[1, "Status"] == "Hidden (qty)"
+
+
+def test_merge_sources_keeps_all():
+    from app import ui
+    as_src = [ApprovedSource(nsn="1", cage="1ABC2", part_no="P-1")]
+    pdf = [ApprovedSource(nsn="1", cage="1ABC2", part_no="P-1", name="ACME"),
+           ApprovedSource(nsn="1", cage="9ZZZ9", part_no="Q", name="OTHER")]
+    t = ui.merge_sources(as_src, pdf)
+    assert list(t["CAGE"]) == ["1ABC2", "9ZZZ9"] and list(t["Company"]) == ["ACME", "OTHER"]
+    assert list(t["Listed in"]) == ["as-file + PDF", "PDF only"]
+    assert len(ui.merge_sources(as_src, None)) == 1
+
+
+def test_pdf_names_only_on_click(app, monkeypatch):
+    import app as pkg
+    calls = []
+    sources = types.ModuleType("app.sources")
+    sources.approved_names = lambda s, n="": calls.append(s) or [
+        ApprovedSource(nsn=n, cage="1ABC2", part_no="P-1", name="ACME FASTENERS")]
+    sources.reconcile = lambda p, a: []
+    monkeypatch.setitem(sys.modules, "app.sources", sources)
+    monkeypatch.setattr(pkg, "sources", sources, raising=False)
+    app.snapshot = SNAP
+    at = AppTest.from_file(UI, default_timeout=30).run()
+    assert not at.exception and calls == []              # never on render
+    btn = [b for b in at.button if b.label.startswith("Load company names")][0]
+    btn.click().run()
+    assert not at.exception and calls == ["SPE1C127T0119"]
+    assert any("ACME FASTENERS" in str(d.value) for d in at.dataframe)

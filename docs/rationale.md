@@ -50,3 +50,12 @@ Append as you go, one entry per decision. If blocked, make a reasonable assumpti
 
 | S2 thin path | 0:04 | 57/57 | n/a | 21/21 | live ingest 2,584 rows, 2,458 sols, 8 flagged, 1,803 approved NSNs |
 | S3 checks | 0:05 | 59/59 | 0 / 50 | 21/21 | evaluator labelled blind; verifier 0 mismatches |
+
+### D7. UX redesign for executives and paying customers (Opus designer)
+- **Decision:** a KPI header with data freshness, a "For you" list with status, due-in and score columns, Line and PR columns for multi-line solicitations, and company names from the PDF on demand. It inventoried all 23 functions before changing anything and kept every one.
+- **Bug found by the designer:** the detail picker was keyed by solicitation number, so 126 of 2,584 lines (17 of 350 matches) could never be opened. Now there is one option per line. This is the "never miss" priority showing up in the UI.
+- **Orchestrator review:** no DIBBS URL is built outside `contracts.py`; the only network calls are the Refresh and Load-names buttons; 60/60 tests pass; renders on live data.
+- **Not reached (honest scores of 7):** no "new since yesterday" view, no export, no issue date stored (only the posted date).
+
+| S5 UX | 0:09 | 60/60 | 0 / 50 | 21/21 | 23/23 functions kept |
+| S6 write-up | 0:10 | 60/60 | 0 / 50 | 21/21 | README final |

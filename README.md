@@ -51,6 +51,7 @@ DIBBS's 20-character description was cut off. Sorted by score, then the soonest 
 | Blind labelled cases (written by an agent that never saw the code) | 21/21, plus byte equality on 313 fixture lines |
 | Unit tests | all passing, offline |
 | Demo profile (fastener supplier) | 350 matches · 27 hidden by qty ≥ 2 |
+| UX review (Opus designer, `docs/ux_review.md`) | executive 5 → 7, bid manager 4 → 7; all 23 functions kept; fixed 126 lines that could not be opened in detail |
 
 ## How it was built
 Staged with gates and a commit per gate (`git log`). Opus orchestrated and reviewed diffs; Sonnet agents built ingest,
